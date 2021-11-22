@@ -1,0 +1,4 @@
+mac
+/root
+xxy
+echo helloword
