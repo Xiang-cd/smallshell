@@ -22,6 +22,7 @@ struct Terminal {
     char wdir[MAXLINE]; // 工作目录
     char strin[MAXFILE]; // 重定向标准输入
     char strout[MAXFILE]; // 重定向标准输出
+    int theme = 0;
 };
 Terminal gTerm;
 
@@ -61,15 +62,21 @@ void GetAccountInit() {
 
 void doEcho(int argc, char *argv[]) {
     int posi = 0;
-    if (regex_match(argv[1], regex("-n"))) {
-        posi = 1;
+    if (regex_match(argv[1], regex("-n"))) posi = 1;
+    if (regex_match(argv[1],regex("--help"))){
+        memset(gTerm.strout,0,MAXFILE);
+        string a ="Echo the STRING(s) to standard output.\n-n     do not output the trailing newline\n-e     enable interpretation of backslash escapes\n-E     disable interpretation of backslash escapes (default)\n--help display this help and exit\n--version\noutput version information and exit\n";
+        memcpy(gTerm.strout,a.c_str(), strlen(a.c_str()));
+        return;
     }
-    for (int i = 1; i < argc; ++i) {
-        if (i != posi) {
-            cout << argv[i] << " ";
-        }
+    string temp = "";
+    for (int i = posi ? 2 : 1; i < argc; ++i) {
+        temp.append(argv[i]);
+        if (i != argc - 1) temp.append(" ");
     }
-    if (!posi) { cout << endl; }
+    if (!posi) { temp.append("\n"); }
+    memset(gTerm.strout,0,MAXFILE );
+    memcpy(gTerm.strout, temp.c_str(), strlen(temp.c_str()));
 }
 
 void doDiff(int argc, char *argv[]) {
@@ -105,19 +112,19 @@ void doLs(int argc, char *argv[]) {
     cout << "ls" << endl;
 }
 
-void doCls(int argc, char *argv[]){
+void doCls(int argc, char *argv[]) {
     system("clear");
 }
 
-void doVim(int argc, char *argv[]){
-    if (argc == 1){system("vim");}
-    if (argc == 2){
-        if (regex_match(argv[1],regex("([0-9]|[a-z]|[A-z])+(.)?[a-z]+"))){
+void doVim(int argc, char *argv[]) {
+    if (argc == 1) { system("vim"); }
+    if (argc == 2) {
+        if (regex_match(argv[1], regex("([0-9]|[a-z]|[A-z])+(.)?[a-z]+"))) {
             string a = "vim ";
             a.append(argv[1]);
             system(a.c_str());
-        } else{
-            cerr<<"invalid file name!"<<endl;
+        } else {
+            cerr << "invalid file name!" << endl;
         }
     }
 }
@@ -142,11 +149,11 @@ bool selectInstr() {
         doDiff(argc, argv);
     } else if (regex_match(argv[0], regex("grep"))) {
         doGrep(argc, argv);
-    }else if (regex_match(argv[0], regex("clear|cls"))) {
+    } else if (regex_match(argv[0], regex("clear|cls"))) {
         doCls(argc, argv);
     } else if (regex_match(argv[0], regex("vim"))) {
         doVim(argc, argv);
-    }  else {
+    } else {
         if (strlen(argv[0]) > 0)return false;
     }
     return true;
@@ -173,6 +180,7 @@ bool splitInstr(string tmp) {
     for (; pos != end; ++pos) {
         proceseInstr(pos->str());
         flag = flag && selectInstr();
+        if (not flag ) return flag;
     }
     return flag;
 }
@@ -192,6 +200,9 @@ int main() {
         getline(cin, tmp);
         right = splitInstr(tmp);
         if (regex_match(argv[0], regex("exit")))break;
+        if (not right)cerr << "command \"" << argv[0] << "\" not found!" << endl;
+        else cout << gTerm.strout;
+        memset(gTerm.strout, 0, MAXFILE); //每次输出后,都将输出流清空
     }
 
     for (int i = 0; i < MAXARG; ++i) {
