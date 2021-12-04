@@ -15,6 +15,8 @@ int argc;
 bool right = true;
 char *argv[MAXARG] = {};
 
+
+
 struct Terminal {
     char user[MAXLINE]; // 用户名
     char mach[MAXLINE]; // 计算机名
@@ -179,7 +181,7 @@ bool splitInstr(string tmp) {
     decltype(pos) end;
     for (; pos != end; ++pos) {
         proceseInstr(pos->str());
-        flag = flag && selectInstr();
+        flag = flag && selectInstr(); //如果遇到指令选择错误，则跳出指令的执行
         if (not flag ) return flag;
     }
     return flag;
