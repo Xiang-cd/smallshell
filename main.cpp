@@ -1,7 +1,6 @@
 #include <iostream>
 #include <regex>
 #include <string>
-#include <stdlib.h>
 
 
 #define  MAXLINE 100
@@ -10,9 +9,9 @@
 #define Debug true
 
 using namespace std;
-int argc;
+int Argc;
 bool right = true;
-char *argv[MAXARG] = {};
+char *Argv[MAXARG] = {};
 
 
 struct Terminal {
@@ -26,39 +25,52 @@ struct Terminal {
 };
 Terminal gTerm;
 
-
-void printHeading(bool right) {
-    if (gTerm.theme == 2){
-        if (right)cout <<"\033[1;35m粉红/洋红\033[0m"<< "\e[92;1m" << gTerm.mach << "@" << gTerm.user << "\e[0m:" << "\e[94;1m" << gTerm.wdir << "\e[0m$";
-        else
-            cout <<"\033[1;35m粉红/洋红\033[0m"<< "\e[92;1m" << gTerm.mach << "@" << gTerm.user << "\e[0m:" << "\e[94;1m" << gTerm.wdir
-                 << "\e[91;1m$\e[0m";
-    } else if (gTerm.theme ==1){
-        if (right)cout  <<"\033[1;45m粉红/洋红\033[0m"<< "\e[92;1m" << gTerm.mach << "@" << gTerm.user << "\e[0m:" << "\e[94;1m" << gTerm.wdir << "\e[0m$";
-        else
-            cout <<"\033[1;45m粉红/洋红\033[0m" << "\e[92;1m" << gTerm.mach << "@" << gTerm.user << "\e[0m:" << "\e[94;1m" << gTerm.wdir
-                 << "\e[91;1m$\e[0m";
-    } else{
-        if (right)cout <<"\033[4#m  dioghd \033[0m"<< "\e[92;1m" << gTerm.mach << "@" << gTerm.user << "\e[0m:" << "\e[94;1m" << gTerm.wdir << "\e[0m$";
-        else
-            cout <<"\033[4#m  dioghd \033[0m" << "\e[92;1m" << gTerm.mach << "@" << gTerm.user << "\e[0m:" << "\e[94;1m" << gTerm.wdir
-                 << "\e[91;1m$\e[0m";
-    }
+inline void printColor(const string &s, int front, int color, bool light = true) {
+    if (light) printf("\033[%d%dm%s\033[0m", front, color, s.c_str());
+    else printf("\033[1;%d%dm%s\033[0m", front, color, s.c_str());
 }
 
-inline string BasicInit(const string input, regex ex) {
+//5 为紫色
+inline void printTheme(const string &a, int front, int color, const string &b, int front2, int color2,bool light = true) {
+    printColor(a, front, color,light);
+    cout << ":";
+    printColor(b, front2, color2,light);
+}
+
+void printHeading(bool right) {
+    string a;
+    a.append(gTerm.mach);
+    a.append("@");
+    a.append(gTerm.user);
+    string b = gTerm.wdir;
+    if (gTerm.theme == 2) {
+        printTheme(a, 3, 5, b, 3, 3);
+    } else if (gTerm.theme == 1) {
+        printTheme(a, 4, 6, b, 4, 2);
+    } else {
+        printTheme(a, 3, 2, b, 3, 4, false);
+    }
+    if (right)cout<<"$";
+    else printColor("$",3,1);
+}
+
+inline string BasicInit(const string &input, const regex &ex) {
     cout << input;
     bool flag = false;
-    string temp = "";
+    string temp;
     while (!flag) {
         getline(cin, temp);
         if (strlen(temp.c_str()) > MAXLINE) {
-            cerr << "too long input name, please input again!\n" << input;
+            cerr << "too long input name, please input again!\n";
+            cout<<input;
             continue;
         }
         flag = regex_match(temp, ex);
-        if (!flag)cerr << "invalid name, please input again!\n" << input;
-        else { return temp; }
+        if (!flag){
+            cerr << "invalid name, please input again!\n";
+            cout<<input;
+        }
+        else break;
     }
     return temp;
 }
@@ -98,7 +110,7 @@ void doEcho(int argc, char *argv[]) {
         memcpy(gTerm.strout, a.c_str(), strlen(a.c_str()));
         return;
     }
-    string temp = "";
+    string temp;
     for (int i = posi ? 2 : 1; i < argc; ++i) {
         temp.append(argv[i]);
         if (i != argc - 1) temp.append(" ");
@@ -148,16 +160,12 @@ void doCls(int argc, char *argv[]) {
 }
 
 void doChange(int argc, char *argv[]) {
-    if (argc <= 1){
-        cerr<<"select a theme please~"<<endl;
-    } else{
-        if (strlen(argv[1])>1){
-            cerr<<"select theme from number 0 to 2"<<endl;
-        } else if (argv[1][0]>'2' or argv[1][0]<'0'){
-            cerr<<"select theme from number 0 to 2"<<endl;
-        } else{
-            gTerm.theme = argv[1][0]-'0';
-        }
+    if (argc <= 1) {
+        cerr << "select a theme please~" << endl;
+    } else if (strlen(argv[1]) > 1 or argv[1][0] > '2' or argv[1][0] < '0') {
+        cerr << "select theme from number 0 to 2" << endl;
+    } else {
+        gTerm.theme = argv[1][0] - '0';
     }
 }
 
@@ -177,48 +185,48 @@ void doVim(int argc, char *argv[]) {
 
 
 bool selectInstr() {
-    if (regex_match(argv[0], regex("echo"))) {
-        doEcho(argc, argv);
-    } else if (regex_match(argv[0], regex("cd"))) {
-        doCd(argc, argv);
-    } else if (regex_match(argv[0], regex("pwd"))) {
-        doPwd(argc, argv);
-    } else if (regex_match(argv[0], regex("ls"))) {
-        doLs(argc, argv);
-    } else if (regex_match(argv[0], regex("cat"))) {
-        doCat(argc, argv);
-    } else if (regex_match(argv[0], regex("tee"))) {
-        doTee(argc, argv);
-    } else if (regex_match(argv[0], regex("cp"))) {
-        doCp(argc, argv);
-    } else if (regex_match(argv[0], regex("diff"))) {
-        doDiff(argc, argv);
-    } else if (regex_match(argv[0], regex("grep"))) {
-        doGrep(argc, argv);
-    } else if (regex_match(argv[0], regex("clear|cls"))) {
-        doCls(argc, argv);
-    } else if (regex_match(argv[0], regex("vim"))) {
-        doVim(argc, argv);
-    } else if (regex_match(argv[0], regex("change"))) {
-        doChange(argc, argv);
-    } else if(regex_match(argv[0],regex("exit"))){
+    if (regex_match(Argv[0], regex("echo"))) {
+        doEcho(Argc, Argv);
+    } else if (regex_match(Argv[0], regex("cd"))) {
+        doCd(Argc, Argv);
+    } else if (regex_match(Argv[0], regex("pwd"))) {
+        doPwd(Argc, Argv);
+    } else if (regex_match(Argv[0], regex("ls"))) {
+        doLs(Argc, Argv);
+    } else if (regex_match(Argv[0], regex("cat"))) {
+        doCat(Argc, Argv);
+    } else if (regex_match(Argv[0], regex("tee"))) {
+        doTee(Argc, Argv);
+    } else if (regex_match(Argv[0], regex("cp"))) {
+        doCp(Argc, Argv);
+    } else if (regex_match(Argv[0], regex("diff"))) {
+        doDiff(Argc, Argv);
+    } else if (regex_match(Argv[0], regex("grep"))) {
+        doGrep(Argc, Argv);
+    } else if (regex_match(Argv[0], regex("clear|cls"))) {
+        doCls(Argc, Argv);
+    } else if (regex_match(Argv[0], regex("vim"))) {
+        doVim(Argc, Argv);
+    } else if (regex_match(Argv[0], regex("change"))) {
+        doChange(Argc, Argv);
+    } else if (regex_match(Argv[0], regex("exit"))) {
         return true;
-    }else {
-        if (strlen(argv[0]) > 0)return false;
+    } else {
+        if (strlen(Argv[0]) > 0)return false;
     }
     return true;
 }
 
 void proceseInstr(string tmp) {
-    argc = 0;
+    Argc = 0;
     regex parttern("\\s+");
     tmp.erase(0, tmp.find_first_not_of(' '));
     sregex_token_iterator pos(tmp.begin(), tmp.end(), parttern, -1);
     decltype(pos) end;
     for (; pos != end; ++pos) {
-        memset(argv[argc], 0, sizeof(char) * MAXLINE);
-        memcpy(argv[argc], pos->str().c_str(), strlen(pos->str().c_str()));
-        argc++;
+        memset(Argv[Argc], 0, sizeof(char) * MAXLINE);
+        memcpy(Argv[Argc], pos->str().c_str(), strlen(pos->str().c_str()));
+        Argc++;
     }
 }
 
@@ -230,10 +238,10 @@ bool splitInstr(string tmp) {
     for (; pos != end; ++pos) {
         proceseInstr(pos->str());
         memcpy(gTerm.strin, gTerm.strout, MAXFILE);
-        memset(gTerm.strout,0,MAXFILE);
+        memset(gTerm.strout, 0, MAXFILE);
         bool tmpf = selectInstr();
         flag = flag and tmpf; //如果遇到指令选择错误，则跳出指令的执行
-        if (not tmpf)cerr << "command \"" << argv[0] << "\" not found!" << endl;
+        if (not tmpf)cerr << "command \"" << Argv[0] << "\" not found!" << endl;
 //        if (not flag) return flag;
     }
     return flag;
@@ -246,20 +254,20 @@ int main() {
     string tmp;
     smatch args;
     for (int i = 0; i < MAXARG; ++i) {
-        argv[i] = new char[MAXLINE];
+        Argv[i] = new char[MAXLINE];
     }
+
     bool right = true;
     while (true) {
         printHeading(right);
         getline(cin, tmp);
         right = splitInstr(tmp);
-        if (regex_match(argv[0], regex("exit")))break;
+        if (regex_match(Argv[0], regex("exit")))break;
         else cout << gTerm.strout;
         memset(gTerm.strout, 0, MAXFILE); //每次输出后,都将输出流清空
     }
-
     for (int i = 0; i < MAXARG; ++i) {
-        delete argv[i];
+        delete Argv[i];
     }
     return 0;
 }
