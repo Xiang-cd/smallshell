@@ -1,23 +1,70 @@
 # 程序设计基础大作业说明文档
 
+项晨东 计04 2019011831
 
+## 程序总体框架
 
 根据需求文档, 进行以下架构的设计:
 
 1. 框架整体是一个死循环，不断等待通过getline来阻塞监听用户的输入，每读取输入的一行，则处理相应的用户输入，处理为命令和参数的形式。
 2. 对于读取到到每一行，先用正则表达式进行指令的分割（面向复合指令），再一次进行指令的选择调用。
-3. 到一行指令执行完毕，再将strout输出到标准输出流中。
-4. 
+3. 每一条指令执行完毕，并且有下一条指令时，将strout拷贝到strin部分，标准输出部分清空。
+3. 到一行指令执行完毕，再将strout输出到屏幕，并将strout清空。
 
+实现的指令有：
 
+1. echo指令
+2. cls|clear 指令
+3. vim 的系统调用
+4. 切换主题 change 指令
+5. exit 指令, 实现手动退出循环
 
+指令的细节见测试文档部分
 
+## 实现细节
 
+指令分割: 通过正则表达式分割后再用迭代器将分割结果交给下游处理
 
+```c++
+bool splitInstr(string tmp) {
+    bool flag = true;
+    regex parttern("\\|");
+    sregex_token_iterator pos(tmp.begin(), tmp.end(), parttern, -1);
+    decltype(pos) end;
+    for (; pos != end; ++pos) {
+        proceseInstr(pos->str());
+        memcpy(gTerm.strin, gTerm.strout, MAXFILE);
+        memset(gTerm.strout, 0, MAXFILE);
+        bool tmpf = selectInstr();
+        flag = flag and tmpf; //如果遇到指令选择错误，则跳出指令的执行
+        if (not tmpf)cerr << "command \"" << Argv[0] << "\" not found!" << endl;
+    }
+    return flag;
+}
+```
+
+指令参数处理: 通过正则表达式, 利用空格或者空白符进行分割, 分割完成的参数写入全局变量`Argv[]`中, 通过记录参数个数`Argc`,最后进行指令的选择, 通过将`Argc`和`Argv[]`作为参数传入下游函数:
+
+```c++
+void proceseInstr(string tmp) {
+    Argc = 0;
+    regex parttern("\\s+");
+    tmp.erase(0, tmp.find_first_not_of(' '));
+    sregex_token_iterator pos(tmp.begin(), tmp.end(), parttern, -1);
+    decltype(pos) end;
+    for (; pos != end; ++pos) {
+        memset(Argv[Argc], 0, sizeof(char) * MAXLINE);
+        memcpy(Argv[Argc], pos->str().c_str(), strlen(pos->str().c_str()));
+        Argc++;
+    }
+}
+```
+
+指令选择部分就是单纯的按第一个参数匹配命令, 最后进行相应函数的调用。
 
 ## 测试部分文档：
 
-为了进行验证功能验证，我们严格按照作业要求文档进行测试样例的生成，以下一一介绍：
+为了进行验证功能验证，我们严格按照作业要求文档进行测试样例的生成, 介绍视频也基本基于测试部分的文档，以下一一介绍：
 
 ### 用户初始化部分：
 
@@ -49,7 +96,7 @@ echo --help
 echo --help -n hello # 不识别后续参数, 只输出帮助内容
 echo hello world! #正常输出
 echo -n hello  #不输出换行符
-echo -n -n # 输出-n,带空行
+echo -n -n # 输出-n,不带换行
 echo --version # 输出 "homework for basic programming,version 0.1"
 ```
 
@@ -68,7 +115,7 @@ pwd
 la #报错
 ```
 
-### 符合指令部分:
+### 复合指令部分:
 
 通过`echo`向`strout`中写入相应的字符, 在执行下一条指令时将`strout`的内容复制到`strin`中, 由每个指令中测试部分输出所有的参数和标注输入输出的情况来进行程序有效性的验证, 为了进行连续的输入输出转换, 执行`pwd`后会向`strout`中写入"pwd output"。
 
@@ -92,6 +139,7 @@ change 1 # 切换为主题1
 change 2 # 切换为主题2
 vim a.txt # 进入vim
 vim a?.txt # 错误文件名报错
+exit #程序退出
 ```
 
 

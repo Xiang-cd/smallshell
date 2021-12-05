@@ -2,15 +2,12 @@
 #include <regex>
 #include <string>
 
-
 #define  MAXLINE 100
 #define  MAXARG 20
 #define  MAXFILE 1000
-#define Debug true
 
 using namespace std;
 int Argc;
-bool right = true;
 char *Argv[MAXARG] = {};
 
 
@@ -25,7 +22,7 @@ struct Terminal {
 };
 Terminal gTerm;
 
-inline void printColor(const string &s, int front, int color, bool light = true) {
+inline void printColor(const string &s, int front, int color, bool light = false) {
     if (light) printf("\033[%d%dm%s\033[0m", front, color, s.c_str());
     else printf("\033[1;%d%dm%s\033[0m", front, color, s.c_str());
 }
@@ -48,7 +45,7 @@ void printHeading(bool right) {
     } else if (gTerm.theme == 1) {
         printTheme(a, 4, 6, b, 4, 2);
     } else {
-        printTheme(a, 3, 2, b, 3, 4, false);
+        printTheme(a, 3, 2, b, 3, 4);
     }
     if (right)cout<<"$";
     else printColor("$",3,1);
@@ -100,7 +97,7 @@ void doEcho(int argc, char *argv[]) {
     if (regex_match(argv[1], regex("-n"))) posi = 1;
     if (regex_match(argv[1], regex("--help"))) {
         memset(gTerm.strout, 0, MAXFILE);
-        string a = "Echo the STRING(s) to standard output.\n-n     do not output the trailing newline\n-e     enable interpretation of backslash escapes\n-E     disable interpretation of backslash escapes (default)\n--help display this help and exit\n--version\noutput version information and exit\n";
+        string a = "Echo the STRING(s) to standard output.\n-n     do not output the trailing newline\n--help display this help and exit\n--version\noutput version information and exit\n";
         memcpy(gTerm.strout, a.c_str(), strlen(a.c_str()));
         return;
     }
@@ -242,7 +239,6 @@ bool splitInstr(string tmp) {
         bool tmpf = selectInstr();
         flag = flag and tmpf; //如果遇到指令选择错误，则跳出指令的执行
         if (not tmpf)cerr << "command \"" << Argv[0] << "\" not found!" << endl;
-//        if (not flag) return flag;
     }
     return flag;
 }
@@ -250,7 +246,6 @@ bool splitInstr(string tmp) {
 int main() {
 //    freopen("/Users/xxy/CLionProjects/basic_programing/homeproject/input.txt", "r", stdin);
     GetAccountInit();
-//    getchar();
     string tmp;
     smatch args;
     for (int i = 0; i < MAXARG; ++i) {
